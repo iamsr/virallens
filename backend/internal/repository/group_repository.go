@@ -8,16 +8,19 @@ import (
 	"github.com/yourusername/virallens/backend/internal/domain"
 )
 
-type groupRepository struct {
+// GroupRepositoryImpl implements domain.GroupRepository
+type GroupRepositoryImpl struct {
 	db *sql.DB
 }
 
 // NewGroupRepository creates a new group repository
+var _ domain.GroupRepository = (*GroupRepositoryImpl)(nil)
+
 func NewGroupRepository(db *sql.DB) domain.GroupRepository {
-	return &groupRepository{db: db}
+	return &GroupRepositoryImpl{db: db}
 }
 
-func (r *groupRepository) Create(group *domain.Group) error {
+func (r *GroupRepositoryImpl) Create(group *domain.Group) error {
 	tx, err := r.db.Begin()
 	if err != nil {
 		return err
@@ -49,7 +52,7 @@ func (r *groupRepository) Create(group *domain.Group) error {
 	return tx.Commit()
 }
 
-func (r *groupRepository) GetByID(id uuid.UUID) (*domain.Group, error) {
+func (r *GroupRepositoryImpl) GetByID(id uuid.UUID) (*domain.Group, error) {
 	// Get group
 	query := `
 		SELECT id, name, created_by, created_at, updated_at
@@ -102,7 +105,7 @@ func (r *groupRepository) GetByID(id uuid.UUID) (*domain.Group, error) {
 	return group, nil
 }
 
-func (r *groupRepository) ListByUserID(userID uuid.UUID) ([]*domain.Group, error) {
+func (r *GroupRepositoryImpl) ListByUserID(userID uuid.UUID) ([]*domain.Group, error) {
 	query := `
 		SELECT DISTINCT g.id, g.name, g.created_by, g.created_at, g.updated_at
 		FROM groups g
@@ -169,7 +172,7 @@ func (r *groupRepository) ListByUserID(userID uuid.UUID) ([]*domain.Group, error
 	return groups, nil
 }
 
-func (r *groupRepository) AddMember(groupID, userID uuid.UUID) error {
+func (r *GroupRepositoryImpl) AddMember(groupID, userID uuid.UUID) error {
 	query := `
 		INSERT INTO group_members (group_id, user_id)
 		VALUES ($1, $2)
@@ -179,7 +182,7 @@ func (r *groupRepository) AddMember(groupID, userID uuid.UUID) error {
 	return err
 }
 
-func (r *groupRepository) RemoveMember(groupID, userID uuid.UUID) error {
+func (r *GroupRepositoryImpl) RemoveMember(groupID, userID uuid.UUID) error {
 	query := `
 		DELETE FROM group_members
 		WHERE group_id = $1 AND user_id = $2
@@ -202,7 +205,7 @@ func (r *groupRepository) RemoveMember(groupID, userID uuid.UUID) error {
 	return nil
 }
 
-func (r *groupRepository) IsMember(groupID, userID uuid.UUID) (bool, error) {
+func (r *GroupRepositoryImpl) IsMember(groupID, userID uuid.UUID) (bool, error) {
 	query := `
 		SELECT EXISTS(
 			SELECT 1

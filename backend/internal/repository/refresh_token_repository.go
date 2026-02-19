@@ -8,16 +8,19 @@ import (
 	"github.com/yourusername/virallens/backend/internal/domain"
 )
 
-type refreshTokenRepository struct {
+// RefreshTokenRepositoryImpl implements domain.RefreshTokenRepository
+type RefreshTokenRepositoryImpl struct {
 	db *sql.DB
 }
 
 // NewRefreshTokenRepository creates a new refresh token repository
+var _ domain.RefreshTokenRepository = (*RefreshTokenRepositoryImpl)(nil)
+
 func NewRefreshTokenRepository(db *sql.DB) domain.RefreshTokenRepository {
-	return &refreshTokenRepository{db: db}
+	return &RefreshTokenRepositoryImpl{db: db}
 }
 
-func (r *refreshTokenRepository) Create(token *domain.RefreshToken) error {
+func (r *RefreshTokenRepositoryImpl) Create(token *domain.RefreshToken) error {
 	query := `
 		INSERT INTO refresh_tokens (id, user_id, token, expires_at, created_at)
 		VALUES ($1, $2, $3, $4, $5)
@@ -35,7 +38,7 @@ func (r *refreshTokenRepository) Create(token *domain.RefreshToken) error {
 	return err
 }
 
-func (r *refreshTokenRepository) GetByToken(token string) (*domain.RefreshToken, error) {
+func (r *RefreshTokenRepositoryImpl) GetByToken(token string) (*domain.RefreshToken, error) {
 	query := `
 		SELECT id, user_id, token, expires_at, created_at
 		FROM refresh_tokens
@@ -61,14 +64,14 @@ func (r *refreshTokenRepository) GetByToken(token string) (*domain.RefreshToken,
 	return refreshToken, nil
 }
 
-func (r *refreshTokenRepository) DeleteByUserID(userID uuid.UUID) error {
+func (r *RefreshTokenRepositoryImpl) DeleteByUserID(userID uuid.UUID) error {
 	query := `DELETE FROM refresh_tokens WHERE user_id = $1`
 
 	_, err := r.db.Exec(query, userID)
 	return err
 }
 
-func (r *refreshTokenRepository) DeleteExpired() error {
+func (r *RefreshTokenRepositoryImpl) DeleteExpired() error {
 	query := `DELETE FROM refresh_tokens WHERE expires_at < NOW()`
 
 	_, err := r.db.Exec(query)

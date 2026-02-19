@@ -9,16 +9,20 @@ import (
 	"github.com/yourusername/virallens/backend/internal/domain"
 )
 
-type userRepository struct {
+// UserRepositoryImpl implements domain.UserRepository
+type UserRepositoryImpl struct {
 	db *sql.DB
 }
 
-// NewUserRepository creates a new user repository
+// Compile-time interface verification
+var _ domain.UserRepository = (*UserRepositoryImpl)(nil)
+
+// NewUserRepository creates a new UserRepositoryImpl
 func NewUserRepository(db *sql.DB) domain.UserRepository {
-	return &userRepository{db: db}
+	return &UserRepositoryImpl{db: db}
 }
 
-func (r *userRepository) Create(user *domain.User) error {
+func (r *UserRepositoryImpl) Create(user *domain.User) error {
 	query := `
 		INSERT INTO users (id, username, email, password_hash, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6)
@@ -47,7 +51,7 @@ func (r *userRepository) Create(user *domain.User) error {
 	return nil
 }
 
-func (r *userRepository) GetByID(id uuid.UUID) (*domain.User, error) {
+func (r *UserRepositoryImpl) GetByID(id uuid.UUID) (*domain.User, error) {
 	query := `
 		SELECT id, username, email, password_hash, created_at, updated_at
 		FROM users
@@ -74,7 +78,7 @@ func (r *userRepository) GetByID(id uuid.UUID) (*domain.User, error) {
 	return user, nil
 }
 
-func (r *userRepository) GetByUsername(username string) (*domain.User, error) {
+func (r *UserRepositoryImpl) GetByUsername(username string) (*domain.User, error) {
 	query := `
 		SELECT id, username, email, password_hash, created_at, updated_at
 		FROM users
@@ -101,7 +105,7 @@ func (r *userRepository) GetByUsername(username string) (*domain.User, error) {
 	return user, nil
 }
 
-func (r *userRepository) GetByEmail(email string) (*domain.User, error) {
+func (r *UserRepositoryImpl) GetByEmail(email string) (*domain.User, error) {
 	query := `
 		SELECT id, username, email, password_hash, created_at, updated_at
 		FROM users
@@ -128,7 +132,7 @@ func (r *userRepository) GetByEmail(email string) (*domain.User, error) {
 	return user, nil
 }
 
-func (r *userRepository) List() ([]*domain.User, error) {
+func (r *UserRepositoryImpl) List() ([]*domain.User, error) {
 	query := `
 		SELECT id, username, email, password_hash, created_at, updated_at
 		FROM users

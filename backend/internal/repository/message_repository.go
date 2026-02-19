@@ -9,16 +9,19 @@ import (
 	"github.com/yourusername/virallens/backend/internal/domain"
 )
 
-type messageRepository struct {
+// MessageRepositoryImpl implements domain.MessageRepository
+type MessageRepositoryImpl struct {
 	db *sql.DB
 }
 
 // NewMessageRepository creates a new message repository
+var _ domain.MessageRepository = (*MessageRepositoryImpl)(nil)
+
 func NewMessageRepository(db *sql.DB) domain.MessageRepository {
-	return &messageRepository{db: db}
+	return &MessageRepositoryImpl{db: db}
 }
 
-func (r *messageRepository) Create(message *domain.Message) error {
+func (r *MessageRepositoryImpl) Create(message *domain.Message) error {
 	query := `
 		INSERT INTO messages (id, sender_id, conversation_id, group_id, content, type, created_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -38,7 +41,7 @@ func (r *messageRepository) Create(message *domain.Message) error {
 	return err
 }
 
-func (r *messageRepository) GetByID(id uuid.UUID) (*domain.Message, error) {
+func (r *MessageRepositoryImpl) GetByID(id uuid.UUID) (*domain.Message, error) {
 	query := `
 		SELECT id, sender_id, conversation_id, group_id, content, type, created_at
 		FROM messages
@@ -66,7 +69,7 @@ func (r *messageRepository) GetByID(id uuid.UUID) (*domain.Message, error) {
 	return message, nil
 }
 
-func (r *messageRepository) ListByConversationID(conversationID uuid.UUID, cursor *time.Time, limit int) ([]*domain.Message, error) {
+func (r *MessageRepositoryImpl) ListByConversationID(conversationID uuid.UUID, cursor *time.Time, limit int) ([]*domain.Message, error) {
 	var query string
 	var args []interface{}
 
@@ -121,7 +124,7 @@ func (r *messageRepository) ListByConversationID(conversationID uuid.UUID, curso
 	return messages, nil
 }
 
-func (r *messageRepository) ListByGroupID(groupID uuid.UUID, cursor *time.Time, limit int) ([]*domain.Message, error) {
+func (r *MessageRepositoryImpl) ListByGroupID(groupID uuid.UUID, cursor *time.Time, limit int) ([]*domain.Message, error) {
 	var query string
 	var args []interface{}
 

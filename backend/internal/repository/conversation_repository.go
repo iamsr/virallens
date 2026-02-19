@@ -8,16 +8,19 @@ import (
 	"github.com/yourusername/virallens/backend/internal/domain"
 )
 
-type conversationRepository struct {
+// ConversationRepositoryImpl implements domain.ConversationRepository
+type ConversationRepositoryImpl struct {
 	db *sql.DB
 }
 
 // NewConversationRepository creates a new conversation repository
+var _ domain.ConversationRepository = (*ConversationRepositoryImpl)(nil)
+
 func NewConversationRepository(db *sql.DB) domain.ConversationRepository {
-	return &conversationRepository{db: db}
+	return &ConversationRepositoryImpl{db: db}
 }
 
-func (r *conversationRepository) Create(conv *domain.Conversation) error {
+func (r *ConversationRepositoryImpl) Create(conv *domain.Conversation) error {
 	tx, err := r.db.Begin()
 	if err != nil {
 		return err
@@ -49,7 +52,7 @@ func (r *conversationRepository) Create(conv *domain.Conversation) error {
 	return tx.Commit()
 }
 
-func (r *conversationRepository) GetByID(id uuid.UUID) (*domain.Conversation, error) {
+func (r *ConversationRepositoryImpl) GetByID(id uuid.UUID) (*domain.Conversation, error) {
 	// Get conversation
 	query := `
 		SELECT id, created_at, updated_at
@@ -100,7 +103,7 @@ func (r *conversationRepository) GetByID(id uuid.UUID) (*domain.Conversation, er
 	return conv, nil
 }
 
-func (r *conversationRepository) GetByParticipants(user1ID, user2ID uuid.UUID) (*domain.Conversation, error) {
+func (r *ConversationRepositoryImpl) GetByParticipants(user1ID, user2ID uuid.UUID) (*domain.Conversation, error) {
 	query := `
 		SELECT c.id, c.created_at, c.updated_at
 		FROM conversations c
@@ -140,7 +143,7 @@ func (r *conversationRepository) GetByParticipants(user1ID, user2ID uuid.UUID) (
 	return conv, nil
 }
 
-func (r *conversationRepository) ListByUserID(userID uuid.UUID) ([]*domain.Conversation, error) {
+func (r *ConversationRepositoryImpl) ListByUserID(userID uuid.UUID) ([]*domain.Conversation, error) {
 	query := `
 		SELECT DISTINCT c.id, c.created_at, c.updated_at
 		FROM conversations c
@@ -205,7 +208,7 @@ func (r *conversationRepository) ListByUserID(userID uuid.UUID) ([]*domain.Conve
 	return conversations, nil
 }
 
-func (r *conversationRepository) AddParticipant(conversationID, userID uuid.UUID) error {
+func (r *ConversationRepositoryImpl) AddParticipant(conversationID, userID uuid.UUID) error {
 	query := `
 		INSERT INTO conversation_participants (conversation_id, user_id)
 		VALUES ($1, $2)
@@ -215,7 +218,7 @@ func (r *conversationRepository) AddParticipant(conversationID, userID uuid.UUID
 	return err
 }
 
-func (r *conversationRepository) IsParticipant(conversationID, userID uuid.UUID) (bool, error) {
+func (r *ConversationRepositoryImpl) IsParticipant(conversationID, userID uuid.UUID) (bool, error) {
 	query := `
 		SELECT EXISTS(
 			SELECT 1
