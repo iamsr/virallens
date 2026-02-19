@@ -10,6 +10,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/yourusername/virallens/backend/internal/api"
 	"github.com/yourusername/virallens/backend/internal/config"
 	"github.com/yourusername/virallens/backend/internal/repository"
 	"github.com/yourusername/virallens/backend/internal/service"
@@ -109,12 +110,8 @@ func main() {
 		return c.JSON(200, map[string]string{"status": "ok"})
 	})
 
-	// WebSocket endpoint
-	e.GET("/ws", wsHandler.HandleWebSocket)
-
-	// TODO: Register API routes here
-	// Example: api.RegisterRoutes(e, services)
-	_ = services // Suppress unused variable warning for now
+	// Register API routes
+	api.RegisterRoutes(e, services.AuthService, services.ConversationService, services.GroupService, services.MessageService, services.JWTService, wsHandler)
 
 	port := os.Getenv("SERVER_PORT")
 	if port == "" {
