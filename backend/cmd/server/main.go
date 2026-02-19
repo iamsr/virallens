@@ -13,6 +13,7 @@ import (
 	"github.com/yourusername/virallens/backend/internal/config"
 	"github.com/yourusername/virallens/backend/internal/repository"
 	"github.com/yourusername/virallens/backend/internal/service"
+	"github.com/yourusername/virallens/backend/internal/websocket"
 )
 
 // AppServices holds all application services
@@ -91,6 +92,13 @@ func main() {
 		time.Duration(refreshTokenDuration)*time.Minute,
 	)
 
+	// Initialize WebSocket hub
+	hub := websocket.NewHub()
+	go hub.Run()
+
+	// Initialize WebSocket handler
+	wsHandler := websocket.NewHandler(hub, services.MessageService, services.ConversationService, services.GroupService, services.JWTService)
+
 	e := echo.New()
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
@@ -100,6 +108,9 @@ func main() {
 	e.GET("/health", func(c echo.Context) error {
 		return c.JSON(200, map[string]string{"status": "ok"})
 	})
+
+	// WebSocket endpoint
+	e.GET("/ws", wsHandler.HandleWebSocket)
 
 	// TODO: Register API routes here
 	// Example: api.RegisterRoutes(e, services)
