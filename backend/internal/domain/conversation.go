@@ -19,4 +19,5 @@ type ConversationRepository interface {
 	GetByParticipants(userID1, userID2 uuid.UUID) (*Conversation, error)
 	ListByUserID(userID uuid.UUID) ([]*Conversation, error)
 	AddParticipant(conversationID, userID uuid.UUID) error
+	IsParticipant(conversationID, userID uuid.UUID) (bool, error)
 }

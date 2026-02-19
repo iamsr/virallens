@@ -50,6 +50,11 @@ func (m *MockConversationRepository) AddParticipant(conversationID, userID uuid.
 	return args.Error(0)
 }
 
+func (m *MockConversationRepository) IsParticipant(conversationID, userID uuid.UUID) (bool, error) {
+	args := m.Called(conversationID, userID)
+	return args.Bool(0), args.Error(1)
+}
+
 func TestConversationService_CreateOrGet_CreatesNew(t *testing.T) {
 	convRepo := new(MockConversationRepository)
 	userRepo := new(MockUserRepository)

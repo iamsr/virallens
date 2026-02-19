@@ -214,3 +214,21 @@ func (r *conversationRepository) AddParticipant(conversationID, userID uuid.UUID
 	_, err := r.db.Exec(query, conversationID, userID)
 	return err
 }
+
+func (r *conversationRepository) IsParticipant(conversationID, userID uuid.UUID) (bool, error) {
+	query := `
+		SELECT EXISTS(
+			SELECT 1
+			FROM conversation_participants
+			WHERE conversation_id = $1 AND user_id = $2
+		)
+	`
+
+	var exists bool
+	err := r.db.QueryRow(query, conversationID, userID).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+
+	return exists, nil
+}
