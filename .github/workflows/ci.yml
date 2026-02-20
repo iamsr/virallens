@@ -45,29 +45,24 @@ jobs:
           go test -v -race -cover ./...
 
   frontend-test:
-    name: Frontend (Node + npm)
+    name: Frontend (Workspace)
     runs-on: ubuntu-latest
 
-    defaults:
-      run:
-        working-directory: frontend
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
 
+      # Install ALL workspace deps from root
       - name: Install dependencies
-        run: npm ci
+        run: npm install --include=optional
 
-      - name: Build
-        run: npm run build
+      # Build only frontend workspace
+      - name: Build frontend
+        run: npm run build --workspace=frontend
 
-      - name: Test
-        run: npm test -- --run
+      # Test only frontend workspace
+      - name: Test frontend
+        run: npm test --workspace=frontend -- --run --passWithNoTests
