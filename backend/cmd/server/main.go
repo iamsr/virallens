@@ -1,125 +1,101 @@
 package main
 
 import (
-	"database/sql"
+	"context"
+	"fmt"
 	"log"
 	"os"
-	"strconv"
-	"time"
+	"os/signal"
+	"syscall"
 
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/yourusername/virallens/backend/internal/api"
 	"github.com/yourusername/virallens/backend/internal/config"
-	"github.com/yourusername/virallens/backend/internal/repository"
-	"github.com/yourusername/virallens/backend/internal/service"
-	"github.com/yourusername/virallens/backend/internal/websocket"
+	"github.com/yourusername/virallens/backend/internal/wire"
 )
 
-// AppServices holds all application services
-type AppServices struct {
-	AuthService         service.AuthService
-	ConversationService service.ConversationService
-	GroupService        service.GroupService
-	MessageService      *service.MessageService
-	JWTService          service.JWTService
-}
-
-// InitializeApp creates all dependencies and returns the application services
-func InitializeApp(db *sql.DB, jwtSecret string, accessTokenDuration, refreshTokenDuration time.Duration) *AppServices {
-	// Initialize repositories
-	userRepo := repository.NewUserRepository(db)
-	conversationRepo := repository.NewConversationRepository(db)
-	groupRepo := repository.NewGroupRepository(db)
-	messageRepo := repository.NewMessageRepository(db)
-	refreshTokenRepo := repository.NewRefreshTokenRepository(db)
-
-	// Initialize services
-	jwtService := service.NewJWTService(jwtSecret, accessTokenDuration, refreshTokenDuration)
-	authService := service.NewAuthService(userRepo, refreshTokenRepo, jwtService)
-	conversationService := service.NewConversationService(conversationRepo, userRepo)
-	groupService := service.NewGroupService(groupRepo, userRepo)
-	messageService := service.NewMessageService(messageRepo, conversationRepo, userRepo, groupRepo)
-
-	return &AppServices{
-		AuthService:         authService,
-		ConversationService: conversationService,
-		GroupService:        groupService,
-		MessageService:      messageService,
-		JWTService:          jwtService,
-	}
-}
-
 func main() {
-	// Load environment variables
+	// Load environment variables from .env file
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found, using environment variables")
 	}
 
-	// Database connection
-	db, err := config.ConnectDB()
+	// Load configuration
+	cfg, err := config.Load()
 	if err != nil {
-		log.Fatal("Failed to connect to database:", err)
-	}
-	defer db.Close()
-
-	// Run migrations
-	if err := config.RunMigrations(db); err != nil {
-		log.Fatal("Failed to run migrations:", err)
+		log.Fatalf("Failed to load configuration: %v", err)
 	}
 
-	// JWT configuration
-	jwtSecret := os.Getenv("JWT_SECRET")
-	if jwtSecret == "" {
-		log.Fatal("JWT_SECRET environment variable is required")
+	// Initialize application with Wire
+	app, err := wire.InitializeApplication(cfg)
+	if err != nil {
+		log.Fatalf("Failed to initialize application: %v", err)
+	}
+	defer app.DB.Close()
+
+	// Run database migrations
+	if err := config.RunMigrations(app.DB); err != nil {
+		log.Fatalf("Failed to run migrations: %v", err)
 	}
 
-	accessTokenDuration, err := strconv.Atoi(os.Getenv("JWT_ACCESS_TOKEN_DURATION"))
-	if err != nil || accessTokenDuration == 0 {
-		accessTokenDuration = 15 // Default to 15 minutes
-	}
+	// Start WebSocket hub
+	go app.WebSocketHub.Run()
+	log.Println("WebSocket hub started")
 
-	refreshTokenDuration, err := strconv.Atoi(os.Getenv("JWT_REFRESH_TOKEN_DURATION"))
-	if err != nil || refreshTokenDuration == 0 {
-		refreshTokenDuration = 10080 // Default to 7 days (7 * 24 * 60 minutes)
-	}
-
-	// Initialize services
-	services := InitializeApp(
-		db,
-		jwtSecret,
-		time.Duration(accessTokenDuration)*time.Minute,
-		time.Duration(refreshTokenDuration)*time.Minute,
-	)
-
-	// Initialize WebSocket hub
-	hub := websocket.NewHub()
-	go hub.Run()
-
-	// Initialize WebSocket handler
-	wsHandler := websocket.NewHandler(hub, services.MessageService, services.ConversationService, services.GroupService, services.JWTService)
-
+	// Create Echo server
 	e := echo.New()
+	e.HideBanner = true
+
+	// Configure middleware
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORS())
+
+	// Configure server timeouts
+	e.Server.ReadTimeout = cfg.Server.ReadTimeout
+	e.Server.WriteTimeout = cfg.Server.WriteTimeout
 
 	// Health check endpoint
 	e.GET("/health", func(c echo.Context) error {
 		return c.JSON(200, map[string]string{"status": "ok"})
 	})
 
-	// Register API routes
-	api.RegisterRoutes(e, services.AuthService, services.ConversationService, services.GroupService, services.MessageService, services.JWTService, wsHandler)
+	// Setup API routes with Wire-injected dependencies
+	api.SetupRoutes(
+		e,
+		app.AuthController,
+		app.ConversationController,
+		app.GroupController,
+		app.JWTMiddleware,
+		app.WebSocketHandler,
+	)
 
-	port := os.Getenv("SERVER_PORT")
-	if port == "" {
-		port = "8080"
+	// Start server in a goroutine for graceful shutdown
+	serverAddr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
+	go func() {
+		log.Printf("Server starting on %s", serverAddr)
+		if err := e.Start(serverAddr); err != nil {
+			log.Printf("Server shutdown: %v", err)
+		}
+	}()
+
+	// Wait for interrupt signal for graceful shutdown
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+	<-quit
+
+	log.Println("Shutting down server...")
+
+	// Create shutdown context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), cfg.Server.ShutdownTimeout)
+	defer cancel()
+
+	// Gracefully shutdown the server
+	if err := e.Shutdown(ctx); err != nil {
+		log.Fatalf("Server forced to shutdown: %v", err)
 	}
 
-	log.Printf("Server starting on port %s", port)
-	if err := e.Start(":" + port); err != nil {
-		log.Fatal(err)
-	}
+	log.Println("Server shutdown complete")
 }

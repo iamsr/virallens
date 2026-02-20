@@ -4,6 +4,8 @@
 package wire
 
 import (
+	"database/sql"
+
 	"github.com/google/wire"
 	"github.com/yourusername/virallens/backend/internal/api"
 	"github.com/yourusername/virallens/backend/internal/config"
@@ -14,6 +16,7 @@ import (
 // Application holds all initialized components
 type Application struct {
 	Config                 *config.Config
+	DB                     *sql.DB
 	AuthController         *api.AuthController
 	ConversationController *api.ConversationController
 	GroupController        *api.GroupController

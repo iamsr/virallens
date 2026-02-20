@@ -7,6 +7,7 @@
 package wire
 
 import (
+	"database/sql"
 	"github.com/yourusername/virallens/backend/internal/api"
 	"github.com/yourusername/virallens/backend/internal/config"
 	"github.com/yourusername/virallens/backend/internal/middleware"
@@ -41,6 +42,7 @@ func InitializeApplication(cfg *config.Config) (*Application, error) {
 	handler := websocket.NewHandler(hub, messageService, conversationService, groupService, jwtService)
 	application := &Application{
 		Config:                 cfg,
+		DB:                     db,
 		AuthController:         authController,
 		ConversationController: conversationController,
 		GroupController:        groupController,
@@ -56,6 +58,7 @@ func InitializeApplication(cfg *config.Config) (*Application, error) {
 // Application holds all initialized components
 type Application struct {
 	Config                 *config.Config
+	DB                     *sql.DB
 	AuthController         *api.AuthController
 	ConversationController *api.ConversationController
 	GroupController        *api.GroupController
