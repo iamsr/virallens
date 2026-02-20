@@ -8,6 +8,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/lib/pq"
 )
 
@@ -65,17 +68,22 @@ func ConnectDB() (*sql.DB, error) {
 
 // RunMigrations runs database migrations on the provided *sql.DB
 func RunMigrations(db *sql.DB) error {
-	// In production, use a proper migration tool like golang-migrate
-	// For this assessment, we'll read and execute the migration file
-	migrationPath := "migrations/001_initial_schema.sql"
-	content, err := os.ReadFile(migrationPath)
+	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	if err != nil {
-		return fmt.Errorf("failed to read migration file: %w", err)
+		return fmt.Errorf("failed to create migration driver: %w", err)
 	}
 
-	_, err = db.Exec(string(content))
+	m, err := migrate.NewWithDatabaseInstance(
+		"file://migrations",
+		"postgres",
+		driver,
+	)
 	if err != nil {
-		return fmt.Errorf("failed to execute migration: %w", err)
+		return fmt.Errorf("failed to create migrate instance: %w", err)
+	}
+
+	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+		return fmt.Errorf("failed to run migrations: %w", err)
 	}
 
 	log.Println("Migrations executed successfully")

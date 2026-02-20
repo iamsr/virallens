@@ -37,7 +37,7 @@ services:
   backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     container_name: virallens-backend
     depends_on:
       postgres:
