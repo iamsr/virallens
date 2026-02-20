@@ -1,13 +1,15 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
-import type { 
-  Conversation, 
-  Group, 
+import type {
+  User,
+  Conversation,
+  Group,
   Message,
   AuthResponse,
   RegisterRequest,
   LoginRequest,
-  ApiError 
+  ApiError
 } from '../types';
+import { useAuthStore } from '../stores/authStore';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
@@ -26,7 +28,7 @@ class ApiClient {
     // Request interceptor to add auth token
     this.client.interceptors.request.use(
       (config) => {
-        const token = this.getAccessToken();
+        const token = useAuthStore.getState().accessToken;
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
@@ -60,7 +62,7 @@ class ApiClient {
           } catch (refreshError) {
             this.refreshTokenPromise = null;
             // Token refresh failed, logout user
-            this.clearTokens();
+            useAuthStore.getState().logout();
             window.location.href = '/login';
             return Promise.reject(refreshError);
           }
@@ -71,30 +73,10 @@ class ApiClient {
     );
   }
 
-  private getAccessToken(): string | null {
-    const auth = localStorage.getItem('auth-storage');
-    if (!auth) return null;
-    try {
-      const parsed = JSON.parse(auth);
-      return parsed.state?.accessToken || null;
-    } catch {
-      return null;
-    }
-  }
-
-  private getRefreshToken(): string | null {
-    const auth = localStorage.getItem('auth-storage');
-    if (!auth) return null;
-    try {
-      const parsed = JSON.parse(auth);
-      return parsed.state?.refreshToken || null;
-    } catch {
-      return null;
-    }
-  }
+  // Removed getAccessToken and getRefreshToken logic to defer securely to Zustand
 
   private async refreshAccessToken(): Promise<string> {
-    const refreshToken = this.getRefreshToken();
+    const refreshToken = useAuthStore.getState().refreshToken;
     if (!refreshToken) {
       throw new Error('No refresh token available');
     }
@@ -107,18 +89,10 @@ class ApiClient {
     const newToken = response.data.access_token;
 
     // Update token in store
-    const auth = localStorage.getItem('auth-storage');
-    if (auth) {
-      const parsed = JSON.parse(auth);
-      parsed.state.accessToken = newToken;
-      localStorage.setItem('auth-storage', JSON.stringify(parsed));
-    }
+    // Update token in store
+    useAuthStore.getState().setAccessToken(newToken);
 
     return newToken;
-  }
-
-  private clearTokens(): void {
-    localStorage.removeItem('auth-storage');
   }
 
   // Auth endpoints
@@ -134,7 +108,13 @@ class ApiClient {
 
   async logout(): Promise<void> {
     await this.client.post('/api/auth/logout');
-    this.clearTokens();
+    useAuthStore.getState().logout();
+  }
+
+  // User endpoints
+  async listUsers(): Promise<User[]> {
+    const response = await this.client.get<User[]>('/api/users');
+    return response.data;
   }
 
   // Conversation endpoints
@@ -162,12 +142,13 @@ class ApiClient {
   ): Promise<Message[]> {
     const params: any = { limit };
     if (cursor) params.cursor = cursor;
-    
+
     const response = await this.client.get<Message[]>(
       `/api/conversations/${id}/messages`,
       { params }
     );
-    return response.data;
+    // Backend returns descending (newest first), reverse to get chronological
+    return response.data.reverse();
   }
 
   // Group endpoints
@@ -208,12 +189,13 @@ class ApiClient {
   ): Promise<Message[]> {
     const params: any = { limit };
     if (cursor) params.cursor = cursor;
-    
+
     const response = await this.client.get<Message[]>(
       `/api/groups/${id}/messages`,
       { params }
     );
-    return response.data;
+    // Backend returns descending (newest first), reverse to get chronological
+    return response.data.reverse();
   }
 }
 

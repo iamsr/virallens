@@ -1,27 +1,36 @@
 import type { Message, WSMessage, OutgoingMessage } from '../types';
+import { useAuthStore } from '../stores/authStore';
 
 const WS_BASE_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8080';
 
 type MessageHandler = (message: Message) => void;
 type ErrorHandler = (error: string) => void;
 type ConnectionHandler = () => void;
+type PresenceHandler = (userId: string, status: 'online' | 'offline') => void;
+type PresenceListHandler = (userIds: string[]) => void;
 
 export class WebSocketClient {
   private ws: WebSocket | null = null;
   private reconnectAttempts = 0;
-  private maxReconnectAttempts = 5;
+  private maxReconnectAttempts = 10;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private reconnectDelay = 1000;
   private messageHandlers: MessageHandler[] = [];
   private errorHandlers: ErrorHandler[] = [];
   private connectHandlers: ConnectionHandler[] = [];
   private disconnectHandlers: ConnectionHandler[] = [];
+  private presenceHandlers: PresenceHandler[] = [];
+  private presenceListHandlers: PresenceListHandler[] = [];
   private isIntentionalClose = false;
 
-  connect(token: string): void {
+  connect(): void {
     if (this.ws?.readyState === WebSocket.OPEN) {
       console.log('WebSocket already connected');
       return;
     }
+
+    const token = useAuthStore.getState().accessToken;
+    if (!token) return;
 
     this.isIntentionalClose = false;
     const url = `${WS_BASE_URL}/ws?token=${token}`;
@@ -30,17 +39,22 @@ export class WebSocketClient {
       this.ws = new WebSocket(url);
 
       this.ws.onopen = () => {
-        console.log('WebSocket connected');
+        console.log('[WS] Connected successfully');
         this.reconnectAttempts = 0;
+        if (this.reconnectTimer) { clearTimeout(this.reconnectTimer); this.reconnectTimer = null; }
         this.connectHandlers.forEach((handler) => handler());
       };
 
       this.ws.onmessage = (event) => {
         try {
-          const data: WSMessage = JSON.parse(event.data);
-          this.handleMessage(data);
+          const messages = typeof event.data === 'string' ? event.data.split('\n') : [event.data];
+          for (const msgStr of messages) {
+            if (!msgStr.trim()) continue;
+            const data: WSMessage = JSON.parse(msgStr);
+            this.handleMessage(data);
+          }
         } catch (error) {
-          console.error('Failed to parse WebSocket message:', error);
+          console.error('Failed to parse WebSocket message:', error, event.data);
         }
       };
 
@@ -51,24 +65,24 @@ export class WebSocketClient {
         );
       };
 
-      this.ws.onclose = () => {
-        console.log('WebSocket disconnected');
+      this.ws.onclose = (event) => {
+        console.log('[WS] Disconnected. code:', event.code, 'reason:', event.reason || 'none');
         this.disconnectHandlers.forEach((handler) => handler());
 
         // Attempt to reconnect if not intentional close
         if (!this.isIntentionalClose) {
-          this.attemptReconnect(token);
+          this.attemptReconnect();
         }
       };
     } catch (error) {
       console.error('Failed to create WebSocket connection:', error);
-      this.attemptReconnect(token);
+      this.attemptReconnect();
     }
   }
 
-  private attemptReconnect(token: string): void {
+  private attemptReconnect(): void {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error('Max reconnection attempts reached');
+      console.error('[WS] Max reconnection attempts reached. Giving up.');
       this.errorHandlers.forEach((handler) =>
         handler('Failed to reconnect to server')
       );
@@ -76,14 +90,16 @@ export class WebSocketClient {
     }
 
     this.reconnectAttempts++;
-    const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
+    // Cap delay at 30s
+    const delay = Math.min(this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1), 30000);
 
-    console.log(
-      `Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts}) in ${delay}ms...`
-    );
+    console.log(`[WS] Reconnecting (${this.reconnectAttempts}/${this.maxReconnectAttempts}) in ${delay}ms...`);
 
-    setTimeout(() => {
-      this.connect(token);
+    this.reconnectTimer = setTimeout(() => {
+      // Just reconnect with whatever token is currently in the store.
+      // The Zustand auth store handles silently refreshing the access token
+      // via the HTTP interceptor when any other API call happens.
+      this.connect();
     }, delay);
   }
 
@@ -105,6 +121,18 @@ export class WebSocketClient {
         // Handle typing indicators if needed
         break;
 
+      case 'presence':
+        if (data.data && data.data.user_id && data.data.status) {
+          this.presenceHandlers.forEach((h) => h(data.data.user_id, data.data.status));
+        }
+        break;
+
+      case 'presence_list':
+        if (Array.isArray(data.data)) {
+          this.presenceListHandlers.forEach((h) => h(data.data));
+        }
+        break;
+
       default:
         console.warn('Unknown message type:', data.type);
     }
@@ -112,9 +140,11 @@ export class WebSocketClient {
 
   sendMessage(message: OutgoingMessage): void {
     if (this.ws?.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify(message));
+      const payload = JSON.stringify(message);
+      console.log('[WS] Sending message:', payload);
+      this.ws.send(payload);
     } else {
-      console.error('WebSocket is not connected');
+      console.error('[WS] Cannot send — readyState:', this.ws?.readyState ?? 'null (no socket)');
       this.errorHandlers.forEach((handler) =>
         handler('Cannot send message: not connected')
       );
@@ -123,6 +153,7 @@ export class WebSocketClient {
 
   disconnect(): void {
     this.isIntentionalClose = true;
+    if (this.reconnectTimer) { clearTimeout(this.reconnectTimer); this.reconnectTimer = null; }
     if (this.ws) {
       this.ws.close();
       this.ws = null;
@@ -157,6 +188,20 @@ export class WebSocketClient {
       this.disconnectHandlers = this.disconnectHandlers.filter(
         (h) => h !== handler
       );
+    };
+  }
+
+  onPresence(handler: PresenceHandler): () => void {
+    this.presenceHandlers.push(handler);
+    return () => {
+      this.presenceHandlers = this.presenceHandlers.filter((h) => h !== handler);
+    };
+  }
+
+  onPresenceList(handler: PresenceListHandler): () => void {
+    this.presenceListHandlers.push(handler);
+    return () => {
+      this.presenceListHandlers = this.presenceListHandlers.filter((h) => h !== handler);
     };
   }
 

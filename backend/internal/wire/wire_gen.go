@@ -7,62 +7,41 @@
 package wire
 
 import (
-	"database/sql"
-	"github.com/yourusername/virallens/backend/internal/api"
+	"github.com/gin-gonic/gin"
 	"github.com/yourusername/virallens/backend/internal/config"
-	"github.com/yourusername/virallens/backend/internal/middleware"
-	"github.com/yourusername/virallens/backend/internal/repository"
-	"github.com/yourusername/virallens/backend/internal/service"
-	"github.com/yourusername/virallens/backend/internal/websocket"
+	"github.com/yourusername/virallens/backend/internal/db"
+	"github.com/yourusername/virallens/backend/modules/auth"
+	"github.com/yourusername/virallens/backend/modules/chat"
+	"github.com/yourusername/virallens/backend/modules/user"
+	"github.com/yourusername/virallens/backend/modules/websocket"
+	"github.com/yourusername/virallens/backend/routes"
 )
 
 // Injectors from wire.go:
 
-// InitializeApplication wires up all dependencies
-func InitializeApplication(cfg *config.Config) (*Application, error) {
-	db, err := ProvideDatabase(cfg)
+// InitializeServer sets up the Gin server with all dependencies injected.
+func InitializeServer(cfg *config.Config) (*gin.Engine, error) {
+	gormDB, err := db.NewDatabase(cfg)
 	if err != nil {
 		return nil, err
 	}
-	userRepository := repository.NewUserRepository(db)
-	refreshTokenRepository := repository.NewRefreshTokenRepository(db)
+	repository := user.NewRepository(gormDB)
+	refreshTokenRepository := auth.NewRefreshTokenRepository(gormDB)
 	jwtService := ProvideJWTService(cfg)
-	authService := service.NewAuthService(userRepository, refreshTokenRepository, jwtService)
-	authController := api.NewAuthController(authService)
-	conversationRepository := repository.NewConversationRepository(db)
-	conversationService := service.NewConversationService(conversationRepository, userRepository)
-	messageRepository := repository.NewMessageRepository(db)
-	groupRepository := repository.NewGroupRepository(db)
-	messageService := ProvideMessageService(messageRepository, conversationRepository, userRepository, groupRepository)
-	conversationController := api.NewConversationController(conversationService, messageService)
-	groupService := service.NewGroupService(groupRepository, userRepository)
-	groupController := api.NewGroupController(groupService, messageService)
-	jwtMiddleware := ProvideJWTMiddleware(jwtService)
-	hub := ProvideWebSocketHub()
+	service := auth.NewService(repository, refreshTokenRepository, jwtService)
+	controller := auth.NewController(service)
+	userService := user.NewService(repository)
+	userController := user.NewController(userService)
+	conversationRepository := chat.NewConversationRepository(gormDB)
+	conversationService := chat.NewConversationService(conversationRepository, repository)
+	messageRepository := chat.NewMessageRepository(gormDB)
+	groupRepository := chat.NewGroupRepository(gormDB)
+	messageService := chat.NewMessageService(messageRepository, conversationRepository, groupRepository, repository)
+	conversationController := chat.NewConversationController(conversationService, messageService)
+	groupService := chat.NewGroupService(groupRepository, repository)
+	groupController := chat.NewGroupController(groupService, messageService)
+	hub := websocket.NewHub()
 	handler := websocket.NewHandler(hub, messageService, conversationService, groupService, jwtService)
-	application := &Application{
-		Config:                 cfg,
-		DB:                     db,
-		AuthController:         authController,
-		ConversationController: conversationController,
-		GroupController:        groupController,
-		JWTMiddleware:          jwtMiddleware,
-		WebSocketHub:           hub,
-		WebSocketHandler:       handler,
-	}
-	return application, nil
-}
-
-// wire.go:
-
-// Application holds all initialized components
-type Application struct {
-	Config                 *config.Config
-	DB                     *sql.DB
-	AuthController         *api.AuthController
-	ConversationController *api.ConversationController
-	GroupController        *api.GroupController
-	JWTMiddleware          *middleware.JWTMiddleware
-	WebSocketHub           *websocket.Hub
-	WebSocketHandler       *websocket.Handler
+	engine := routes.SetupRouter(controller, userController, conversationController, groupController, handler, jwtService)
+	return engine, nil
 }

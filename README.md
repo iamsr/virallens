@@ -4,237 +4,125 @@ A modern, real-time chat application built with Go and React.
 
 ## Features
 
-- 💬 Real-time messaging via WebSocket
-- 👥 One-on-one conversations
-- 🎭 Group chats
-- 🔐 JWT authentication
-- 📱 Responsive UI with HeroUI components
-- 🎨 Clean Architecture backend
-- ⚡ Fast and scalable
+- 💬 **Real-time messaging**: Seamless instant messaging via WebSocket.
+- 👥 **One-on-one & Group chats**: Private conversations and collaborative group spaces.
+- 🔐 **JWT authentication**: Secure access with access and refresh tokens.
+- 🛑 **Rate Limiting**: Built-in protection against message spam.
+- 📱 **Responsive UI**: Sleek, mobile-friendly design using HeroUI (NextUI) components.
+- ⚡ **Go-powered Backend**: High-performance API built with Gin.
+- 🚀 **CI/CD**: Automated building and testing with GitHub Actions.
 
 ## Tech Stack
 
 ### Backend
-- **Language**: Go 1.22+
-- **Framework**: Echo v4
-- **Database**: PostgreSQL 15+
-- **WebSocket**: gorilla/websocket
-- **DI**: Google Wire
-- **Testing**: testify + Mockery
+
+- **Language**: Go 1.25+
+- **Framework**: [Gin](https://gin-gonic.com/)
+- **Database**: [PostgreSQL](https://www.postgresql.org/) (via [GORM](https://gorm.io/))
+- **WebSocket**: [gorilla/websocket](https://github.com/gorilla/websocket)
+- **DI**: [Google Wire](https://github.com/google/wire)
+- **Configuration**: [Viper](https://github.com/spf13/viper)
 
 ### Frontend
-- **Framework**: React 19
+
+- **Framework**: [React 19](https://react.dev/)
+- **Build Tool**: [Vite](https://vitejs.dev/)
 - **Language**: TypeScript
-- **State**: Zustand
-- **UI**: HeroUI (NextUI)
-- **Build**: Vite
+- **State Management**: [Zustand](https://github.com/pmndrs/zustand)
+- **UI Library**: [HeroUI](https://heroui.com/) (formerly NextUI)
+- **Styling**: Tailwind CSS
+
+---
 
 ## Quick Start
 
 ### Prerequisites
 
-- Go 1.22+
-- Node.js 18+
-- PostgreSQL 15+
-- Make
+- [Go](https://go.dev/doc/install) (1.25+)
+- [Node.js](https://nodejs.org/) (20+)
+- [Docker](https://www.docker.com/) (for PostgreSQL)
+- [Make](https://www.gnu.org/software/make/)
 
-### Installation
+### Installation & Setup
 
-1. **Clone the repository**:
+1. **Clone & Install Dependencies**
+
    ```bash
    git clone https://github.com/yourusername/virallens.git
    cd virallens
-   ```
-
-2. **Install all dependencies**:
-   ```bash
    make install
    ```
 
-3. **Setup environment**:
+2. **Environment Configuration**
+
    ```bash
    cp backend/.env.example backend/.env
-   # Edit backend/.env with your configuration
+   # Update backend/.env with your settings (DB_URL, JWT_SECRET, etc.)
    ```
 
-4. **Start database** (using Docker):
-   ```bash
-   make docker-up
-   ```
+3. **Infrastructure & Database**
 
-5. **Run migrations**:
    ```bash
+   docker-compose up -d  # Start PostgreSQL
    cd backend && make migrate-up
    ```
 
-6. **Start development servers**:
+4. **Run Development Mode**
    ```bash
-   make dev
+   make dev  # Starts both Backend and Frontend
    ```
 
-The application will be available at:
-- Frontend: http://localhost:5173
-- Backend: http://localhost:8080
+- **Frontend**: [http://localhost:5173](http://localhost:5173)
+- **Backend API**: [http://localhost:8080](http://localhost:8080)
 
-## Development
+---
 
-### Project Structure
+## Architecture Overview
 
-```
-virallens/
-├── backend/              # Go backend
-│   ├── cmd/             # Application entry points
-│   ├── internal/        # Internal packages
-│   ├── test/            # Tests and test utilities
-│   └── migrations/      # Database migrations
-├── frontend/            # React frontend
-│   ├── src/            # Source code
-│   │   ├── components/ # React components
-│   │   ├── pages/      # Page components
-│   │   ├── stores/     # Zustand stores
-│   │   └── services/   # API & WebSocket services
-│   └── public/         # Static assets
-├── docs/                # Documentation
-└── scripts/             # Utility scripts
-```
+### Backend (Layered Architecture)
 
-### Available Commands
+The backend is structured into modular components using a layered approach to ensure separation of concerns:
 
-#### Root Commands
-```bash
-make help          # Show available commands
-make install       # Install all dependencies
-make dev           # Start backend + frontend
-make dev-backend   # Start backend only
-make dev-frontend  # Start frontend only
-make build         # Build both projects
-make test          # Run all tests
-make clean         # Clean build artifacts
-make docker-up     # Start Docker services
-make docker-down   # Stop Docker services
-```
+- **Routes**: Defines the API endpoints and connects them to controllers and middlewares.
+- **Controllers**: Handle HTTP requests, validate input, and call service methods.
+- **Services**: Contain business logic and orchestrate domain operations.
+- **Repositories**: Abstract database access using GORM.
+- **Middlewares**: Handle cross-cutting concerns like Auth (JWT) and Rate Limiting.
+- **WebSocket**: A dedicated handler for managing real-time connections and message broadcasting.
 
-#### Backend Commands
-```bash
-cd backend
-make help              # Show backend commands
-make build             # Build server binary
-make run               # Run server
-make test              # Run tests
-make wire              # Generate Wire DI code
-make mocks             # Generate mocks
-make migrate-up        # Run migrations
-```
+### Frontend (Modern React Hooks & State)
 
-#### Frontend Commands
-```bash
-cd frontend
-npm run dev            # Start dev server
-npm run build          # Build for production
-npm run preview        # Preview production build
-npm run test           # Run tests
-npm run lint           # Lint code
-```
+- **Components**: Atomic and reusable UI elements.
+- **Hooks**: Custom logic for API calls and WebSocket synchronization.
+- **Zustand Stores**: Centralized state for user sessions, chat history, and UI state.
+- **API/WS Layer**: Service-based communication with the backend.
 
-### Running Tests
+---
 
-```bash
-# All tests (backend + frontend)
-make test
+## Key Trade-offs & Design Decisions
 
-# Backend only
-make test-backend
+- **In-Memory Rate Limiting**: We implemented a per-user in-memory rate limiter for messages.
+  - _Trade-off_: While fast and simple to implement, it doesn't persist across restarts or scale horizontally in a multi-instance environment (for which Redis would be preferred).
+- **Monolithic Repository**: Both frontend and backend reside in a single repository.
+  - _Trade-off_: Simplifies development synchronization and CI/CD but may become harder to manage as the team and codebase grow significantly.
+- **GORM vs. Raw SQL**: Used GORM for rapid development and ease of migration management.
+  - _Trade-off_: Abstracted away some performance optimizations possible with raw SQL for the sake of developer productivity.
+- **JWT-based Auth**: Stateless authentication using JWTs.
+  - _Trade-off_: Easier to scale than session-based auth, but requires careful token management (refresh tokens) and lacks immediate revocation without an blocklist.
+- **Zustand over Redux**: Chosen for its minimal boilerplate and ease of use in smaller to medium applications.
+  - _Trade-off_: Less prescriptive than Redux, which requires discipline to maintain a clean state structure.
 
-# Frontend only
-make test-frontend
-```
+---
 
-### Database Migrations
+## CI/CD Pipeline
 
-```bash
-# Run migrations
-cd backend && make migrate-up
+We use **GitHub Actions** to maintain code quality:
 
-# Rollback migrations
-cd backend && make migrate-down
+- **Backend**: Automated `go build` and `go test` (with race detection) on every pull request.
+- **Frontend**: Automated `npm run build` and `vitest` to ensure UI stability.
 
-# Create new migration
-cd backend && make migrate-create name=your_migration_name
-```
-
-## Architecture
-
-### Backend (Clean Architecture)
-
-The backend follows Clean Architecture with clear separation of concerns:
-
-```
-Domain Layer (entities, interfaces)
-    ↓
-Repository Layer (data persistence)
-    ↓
-Service Layer (business logic)
-    ↓
-API Layer (HTTP controllers)
-```
-
-Dependencies are managed with **Google Wire** for compile-time dependency injection.
-
-### Frontend (Component-Based)
-
-The frontend uses React with functional components and hooks:
-
-```
-Pages → Components → Services (API/WebSocket) → Stores (Zustand)
-```
-
-## Deployment
-
-### Docker Compose (Development)
-
-```bash
-make docker-up
-```
-
-### Production
-
-See individual README files:
-- Backend: [backend/README.md](backend/README.md)
-- Frontend: [frontend/README.md](frontend/README.md)
-
-## API Documentation
-
-### Authentication
-- `POST /api/auth/register` - Register
-- `POST /api/auth/login` - Login
-- `POST /api/auth/refresh` - Refresh token
-
-### Conversations
-- `GET /api/conversations` - List conversations
-- `POST /api/conversations` - Create conversation
-- `GET /api/conversations/:id/messages` - Get messages
-
-### Groups
-- `POST /api/groups` - Create group
-- `POST /api/groups/:id/members` - Add member
-- `GET /api/groups/:id/messages` - Get messages
-
-### WebSocket
-- `GET /api/ws` - WebSocket connection
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch
-3. Write tests
-4. Implement your feature
-5. Ensure tests pass
-6. Submit a pull request
+---
 
 ## License
 
 MIT
-
-## Support
-
-For issues and questions, please open an issue on GitHub.

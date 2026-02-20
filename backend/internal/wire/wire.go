@@ -4,37 +4,24 @@
 package wire
 
 import (
-	"database/sql"
-
+	"github.com/gin-gonic/gin"
 	"github.com/google/wire"
-	"github.com/yourusername/virallens/backend/internal/api"
 	"github.com/yourusername/virallens/backend/internal/config"
-	"github.com/yourusername/virallens/backend/internal/middleware"
-	"github.com/yourusername/virallens/backend/internal/websocket"
+	"github.com/yourusername/virallens/backend/internal/db"
+	"github.com/yourusername/virallens/backend/routes"
 )
 
-// Application holds all initialized components
-type Application struct {
-	Config                 *config.Config
-	DB                     *sql.DB
-	AuthController         *api.AuthController
-	ConversationController *api.ConversationController
-	GroupController        *api.GroupController
-	JWTMiddleware          *middleware.JWTMiddleware
-	WebSocketHub           *websocket.Hub
-	WebSocketHandler       *websocket.Handler
-}
-
-// InitializeApplication wires up all dependencies
-func InitializeApplication(cfg *config.Config) (*Application, error) {
+// InitializeServer sets up the Gin server with all dependencies injected.
+func InitializeServer(cfg *config.Config) (*gin.Engine, error) {
 	wire.Build(
-		ProvideDatabase,
-		RepositorySet,
-		ServiceSet,
-		ControllerSet,
-		MiddlewareSet,
+		db.NewDatabase,
+
+		UserSet,
+		AuthSet,
+		ChatSet,
 		WebSocketSet,
-		wire.Struct(new(Application), "*"),
+
+		routes.SetupRouter,
 	)
 	return nil, nil
 }

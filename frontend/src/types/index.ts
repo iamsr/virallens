@@ -62,7 +62,7 @@ export interface RefreshTokenRequest {
 
 // WebSocket message types
 export interface WSMessage {
-  type: 'message' | 'error' | 'typing';
+  type: 'message' | 'error' | 'typing' | 'presence' | 'presence_list';
   data?: any;
   message?: string;
 }

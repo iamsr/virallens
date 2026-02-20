@@ -2,44 +2,49 @@ package wire
 
 import (
 	"github.com/google/wire"
-	"github.com/yourusername/virallens/backend/internal/api"
-	"github.com/yourusername/virallens/backend/internal/repository"
-	"github.com/yourusername/virallens/backend/internal/service"
-	"github.com/yourusername/virallens/backend/internal/websocket"
+	"github.com/yourusername/virallens/backend/internal/config"
+
+	"github.com/yourusername/virallens/backend/modules/auth"
+	"github.com/yourusername/virallens/backend/modules/chat"
+	"github.com/yourusername/virallens/backend/modules/user"
+	"github.com/yourusername/virallens/backend/modules/websocket"
 )
 
-// Repository providers
-var RepositorySet = wire.NewSet(
-	repository.NewUserRepository,
-	repository.NewConversationRepository,
-	repository.NewGroupRepository,
-	repository.NewMessageRepository,
-	repository.NewRefreshTokenRepository,
-)
+// ProvideJWTService provides a configured JWT service
+func ProvideJWTService(cfg *config.Config) auth.JWTService {
+	// Use config struct fields
+	return auth.NewJWTService(cfg.JWT.AccessSecret, cfg.JWT.AccessExpiration, cfg.JWT.RefreshExpiration)
+}
 
-// Service providers
-var ServiceSet = wire.NewSet(
-	service.NewAuthService,
-	service.NewConversationService,
-	service.NewGroupService,
-	ProvideMessageService,
+// AuthSet provides auth dependencies
+var AuthSet = wire.NewSet(
 	ProvideJWTService,
+	auth.NewRefreshTokenRepository,
+	auth.NewService,
+	auth.NewController,
 )
 
-// Controller providers
-var ControllerSet = wire.NewSet(
-	api.NewAuthController,
-	api.NewConversationController,
-	api.NewGroupController,
+// UserSet provides user dependencies
+var UserSet = wire.NewSet(
+	user.NewRepository,
+	user.NewService,
+	user.NewController,
 )
 
-// Middleware providers
-var MiddlewareSet = wire.NewSet(
-	ProvideJWTMiddleware,
+// ChatSet provides chat dependencies
+var ChatSet = wire.NewSet(
+	chat.NewConversationRepository,
+	chat.NewGroupRepository,
+	chat.NewMessageRepository,
+	chat.NewConversationService,
+	chat.NewGroupService,
+	chat.NewMessageService,
+	chat.NewConversationController,
+	chat.NewGroupController,
 )
 
-// WebSocket providers
+// WebSocketSet provides websocket dependencies
 var WebSocketSet = wire.NewSet(
-	ProvideWebSocketHub,
+	websocket.NewHub,
 	websocket.NewHandler,
 )
