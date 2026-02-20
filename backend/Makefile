@@ -1,4 +1,4 @@
-.PHONY: help build run test clean wire mocks migrate
+.PHONY: help build run test test-integration test-unit coverage wire mocks clean deps lint fmt migrate-up migrate-down migrate-create
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'

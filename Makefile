@@ -1,4 +1,4 @@
-.PHONY: help install dev prod test clean docker-up docker-down
+.PHONY: help install dev dev-backend dev-frontend build test test-backend test-frontend clean docker-up docker-down docker-logs wire mocks
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
