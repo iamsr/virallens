@@ -42,14 +42,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        run: npm ci --include=optional
-
-      - name: Rebuild native modules
-        run: cd frontend && npm rebuild
+        run: |
+          rm -rf node_modules frontend/node_modules
+          npm install
 
       - name: Build
         run: cd frontend && npm run build
