@@ -13,6 +13,7 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/yourusername/virallens/backend/internal/api"
 	"github.com/yourusername/virallens/backend/internal/config"
+	custommiddleware "github.com/yourusername/virallens/backend/internal/middleware"
 	"github.com/yourusername/virallens/backend/internal/wire"
 )
 
@@ -47,6 +48,9 @@ func main() {
 	// Create Echo server
 	e := echo.New()
 	e.HideBanner = true
+
+	// Register custom validator
+	e.Validator = custommiddleware.NewValidator()
 
 	// Configure middleware
 	e.Use(middleware.Logger())

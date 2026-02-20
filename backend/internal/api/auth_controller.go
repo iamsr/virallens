@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
+	"github.com/yourusername/virallens/backend/internal/api/dto"
 	"github.com/yourusername/virallens/backend/internal/service"
 )
 
@@ -17,38 +18,16 @@ func NewAuthController(authService service.AuthService) *AuthController {
 	}
 }
 
-// RegisterRequest represents the registration request body
-type RegisterRequest struct {
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
-// LoginRequest represents the login request body
-type LoginRequest struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
-
-// RefreshTokenRequest represents the refresh token request body
-type RefreshTokenRequest struct {
-	RefreshToken string `json:"refresh_token"`
-}
-
 // Register handles user registration
 func (ac *AuthController) Register(c echo.Context) error {
-	var req RegisterRequest
+	var req dto.RegisterRequest
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request body"})
 	}
 
-	// Basic validation
-	if req.Username == "" || req.Email == "" || req.Password == "" {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "username, email, and password are required"})
-	}
-
-	if len(req.Password) < 6 {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "password must be at least 6 characters"})
+	// Validate using Echo's validator
+	if err := c.Validate(&req); err != nil {
+		return err
 	}
 
 	resp, err := ac.authService.Register(&service.RegisterRequest{
@@ -69,14 +48,14 @@ func (ac *AuthController) Register(c echo.Context) error {
 
 // Login handles user login
 func (ac *AuthController) Login(c echo.Context) error {
-	var req LoginRequest
+	var req dto.LoginRequest
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request body"})
 	}
 
-	// Basic validation
-	if req.Username == "" || req.Password == "" {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "username and password are required"})
+	// Validate using Echo's validator
+	if err := c.Validate(&req); err != nil {
+		return err
 	}
 
 	resp, err := ac.authService.Login(&service.LoginRequest{
@@ -96,13 +75,14 @@ func (ac *AuthController) Login(c echo.Context) error {
 
 // RefreshToken handles token refresh
 func (ac *AuthController) RefreshToken(c echo.Context) error {
-	var req RefreshTokenRequest
+	var req dto.RefreshTokenRequest
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request body"})
 	}
 
-	if req.RefreshToken == "" {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "refresh_token is required"})
+	// Validate using Echo's validator
+	if err := c.Validate(&req); err != nil {
+		return err
 	}
 
 	resp, err := ac.authService.RefreshToken(req.RefreshToken)

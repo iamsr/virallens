@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
+	"github.com/yourusername/virallens/backend/internal/api/dto"
 	"github.com/yourusername/virallens/backend/internal/service"
 )
 
@@ -21,22 +22,6 @@ func NewGroupController(groupService service.GroupService, messageService *servi
 	}
 }
 
-// CreateGroupRequest represents the request to create a group
-type CreateGroupRequest struct {
-	Name    string   `json:"name"`
-	Members []string `json:"members"`
-}
-
-// AddMemberRequest represents the request to add a member to a group
-type AddMemberRequest struct {
-	UserID string `json:"user_id"`
-}
-
-// RemoveMemberRequest represents the request to remove a member from a group
-type RemoveMemberRequest struct {
-	UserID string `json:"user_id"`
-}
-
 // Create creates a new group
 func (gc *GroupController) Create(c echo.Context) error {
 	userID, err := getUserIDFromContext(c)
@@ -44,13 +29,14 @@ func (gc *GroupController) Create(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
 	}
 
-	var req CreateGroupRequest
+	var req dto.CreateGroupRequest
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request body"})
 	}
 
-	if req.Name == "" {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "name is required"})
+	// Validate using Echo's validator
+	if err := c.Validate(&req); err != nil {
+		return err
 	}
 
 	// Parse member UUIDs
@@ -118,13 +104,14 @@ func (gc *GroupController) AddMember(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid group ID"})
 	}
 
-	var req AddMemberRequest
+	var req dto.AddMemberRequest
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request body"})
 	}
 
-	if req.UserID == "" {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "user_id is required"})
+	// Validate using Echo's validator
+	if err := c.Validate(&req); err != nil {
+		return err
 	}
 
 	newMemberID, err := parseUUID(req.UserID)
@@ -151,13 +138,14 @@ func (gc *GroupController) RemoveMember(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid group ID"})
 	}
 
-	var req RemoveMemberRequest
+	var req dto.RemoveMemberRequest
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request body"})
 	}
 
-	if req.UserID == "" {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "user_id is required"})
+	// Validate using Echo's validator
+	if err := c.Validate(&req); err != nil {
+		return err
 	}
 
 	memberToRemoveID, err := parseUUID(req.UserID)
@@ -184,10 +172,7 @@ func (gc *GroupController) GetMessages(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid group ID"})
 	}
 
-	var query struct {
-		Cursor string `query:"cursor"`
-		Limit  int    `query:"limit"`
-	}
+	var query dto.GetMessagesQuery
 	if err := c.Bind(&query); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid query parameters"})
 	}

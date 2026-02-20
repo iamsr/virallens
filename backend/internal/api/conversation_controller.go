@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
+	"github.com/yourusername/virallens/backend/internal/api/dto"
 	"github.com/yourusername/virallens/backend/internal/service"
 )
 
@@ -20,17 +21,6 @@ func NewConversationController(conversationService service.ConversationService, 
 	}
 }
 
-// CreateOrGetRequest represents the request to create or get a conversation
-type CreateOrGetRequest struct {
-	OtherUserID string `json:"other_user_id"`
-}
-
-// GetMessagesQuery represents query parameters for getting messages
-type GetMessagesQuery struct {
-	Cursor string `query:"cursor"`
-	Limit  int    `query:"limit"`
-}
-
 // CreateOrGet creates a new conversation or returns existing one
 func (cc *ConversationController) CreateOrGet(c echo.Context) error {
 	userID, err := getUserIDFromContext(c)
@@ -38,13 +28,14 @@ func (cc *ConversationController) CreateOrGet(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
 	}
 
-	var req CreateOrGetRequest
+	var req dto.CreateOrGetRequest
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request body"})
 	}
 
-	if req.OtherUserID == "" {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "other_user_id is required"})
+	// Validate using Echo's validator
+	if err := c.Validate(&req); err != nil {
+		return err
 	}
 
 	otherUserID, err := parseUUID(req.OtherUserID)
@@ -107,7 +98,7 @@ func (cc *ConversationController) GetMessages(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid conversation ID"})
 	}
 
-	var query GetMessagesQuery
+	var query dto.GetMessagesQuery
 	if err := c.Bind(&query); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid query parameters"})
 	}
