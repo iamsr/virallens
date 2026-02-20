@@ -1,0 +1,31 @@
+{
+  "name": "virallens-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ViralLens - Real-time chat application monorepo",
+  "workspaces": [
+    "frontend"
+  ],
+  "scripts": {
+    "install:all": "npm install && cd backend && go mod download",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && go run cmd/server/main.go",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build": "npm run build:backend && npm run build:frontend",
+    "build:backend": "cd backend && go build -o bin/server cmd/server/main.go",
+    "build:frontend": "cd frontend && npm run build",
+    "test": "npm run test:backend && npm run test:frontend",
+    "test:backend": "cd backend && go test ./...",
+    "test:frontend": "cd frontend && npm run test",
+    "clean": "npm run clean:backend && npm run clean:frontend && rm -rf node_modules",
+    "clean:backend": "cd backend && rm -rf bin/",
+    "clean:frontend": "cd frontend && rm -rf dist/ node_modules/"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}
