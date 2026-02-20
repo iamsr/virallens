@@ -42,13 +42,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          package-manager: pnpm
 
       - name: Install dependencies
         run: |
           cd frontend
-          rm -rf node_modules package-lock.json
-          npm install
-          npm install lightningcss-linux-x64-gnu --force
+          rm -rf node_modules pnpm-lock.yaml
+          pnpm install
 
       - name: Build
         run: cd frontend && npm run build
