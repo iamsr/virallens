@@ -21,6 +21,12 @@ jobs:
       - name: Install dependencies
         run: cd backend && go mod download
 
+      - name: Install Wire
+        run: go install github.com/google/wire/cmd/wire@latest
+
+      - name: Generate Wire code
+        run: cd backend/internal/wire && $(go env GOPATH)/bin/wire
+
       - name: Build
         run: cd backend && go build -v ./...
 
@@ -40,7 +46,8 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
-        run: cd frontend && npm ci
+        # Use npm install instead of npm ci to handle platform-specific optional dependencies (e.g., Rollup)
+        run: cd frontend && npm install
 
       - name: Build
         run: cd frontend && npm run build
