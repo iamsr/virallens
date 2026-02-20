@@ -46,8 +46,10 @@ jobs:
           cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        # Use npm ci at root for workspace-aware installation
-        run: npm ci
+        run: npm ci --include=optional
+
+      - name: Rebuild native modules
+        run: cd frontend && npm rebuild
 
       - name: Build
         run: cd frontend && npm run build
