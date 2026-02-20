@@ -8,13 +8,13 @@ package wire
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/yourusername/virallens/backend/internal/config"
-	"github.com/yourusername/virallens/backend/internal/db"
-	"github.com/yourusername/virallens/backend/modules/auth"
-	"github.com/yourusername/virallens/backend/modules/chat"
-	"github.com/yourusername/virallens/backend/modules/user"
-	"github.com/yourusername/virallens/backend/modules/websocket"
-	"github.com/yourusername/virallens/backend/routes"
+	"github.com/iamsr/virallens/backend/internal/config"
+	"github.com/iamsr/virallens/backend/internal/db"
+	"github.com/iamsr/virallens/backend/modules/auth"
+	"github.com/iamsr/virallens/backend/modules/chat"
+	"github.com/iamsr/virallens/backend/modules/user"
+	"github.com/iamsr/virallens/backend/modules/websocket"
+	"github.com/iamsr/virallens/backend/routes"
 )
 
 // Injectors from wire.go:

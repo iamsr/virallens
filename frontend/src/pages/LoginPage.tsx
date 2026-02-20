@@ -9,6 +9,7 @@ import {
 } from '@heroui/react';
 import { apiClient } from '../services/api';
 import { useAuthStore } from '../stores/authStore';
+import LightRays from '../components/LightRays';
 
 export function LoginPage() {
   const [username, setUsername] = useState('');
@@ -37,11 +38,24 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      {/* Background mesh gradient */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-primary/10 blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full bg-secondary/10 blur-3xl" />
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
+      {/* LightRays Background */}
+      <div className="absolute inset-0 z-0">
+        <LightRays
+          raysOrigin="top-center"
+          raysColor="#ffffff"
+          raysSpeed={1}
+          lightSpread={0.5}
+          rayLength={3}
+          followMouse={true}
+          mouseInfluence={0.1}
+          noiseAmount={0}
+          distortion={0}
+          className="custom-rays"
+          pulsating={false}
+          fadeDistance={1}
+          saturation={1}
+        />
       </div>
 
       <div className="w-full max-w-md relative z-10">

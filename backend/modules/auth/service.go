@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/yourusername/virallens/backend/models"
-	"github.com/yourusername/virallens/backend/modules/auth/dto"
-	"github.com/yourusername/virallens/backend/modules/user"
+	"github.com/iamsr/virallens/backend/models"
+	"github.com/iamsr/virallens/backend/modules/auth/dto"
+	"github.com/iamsr/virallens/backend/modules/user"
 	"golang.org/x/crypto/bcrypt"
 )
 

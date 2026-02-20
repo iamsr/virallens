@@ -46,8 +46,8 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
-        # Use npm install instead of npm ci to handle platform-specific optional dependencies (e.g., Rollup)
-        run: cd frontend && npm install
+        # Use npm ci for reproducible builds in CI environments
+        run: cd frontend && npm ci
 
       - name: Build
         run: cd frontend && npm run build

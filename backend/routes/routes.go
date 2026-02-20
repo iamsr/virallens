@@ -5,11 +5,11 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/yourusername/virallens/backend/common/middlewares"
-	"github.com/yourusername/virallens/backend/modules/auth"
-	"github.com/yourusername/virallens/backend/modules/chat"
-	"github.com/yourusername/virallens/backend/modules/user"
-	"github.com/yourusername/virallens/backend/modules/websocket"
+	"github.com/iamsr/virallens/backend/common/middlewares"
+	"github.com/iamsr/virallens/backend/modules/auth"
+	"github.com/iamsr/virallens/backend/modules/chat"
+	"github.com/iamsr/virallens/backend/modules/user"
+	"github.com/iamsr/virallens/backend/modules/websocket"
 )
 
 func SetupRouter(

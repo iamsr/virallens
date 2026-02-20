@@ -2,12 +2,12 @@ package wire
 
 import (
 	"github.com/google/wire"
-	"github.com/yourusername/virallens/backend/internal/config"
+	"github.com/iamsr/virallens/backend/internal/config"
 
-	"github.com/yourusername/virallens/backend/modules/auth"
-	"github.com/yourusername/virallens/backend/modules/chat"
-	"github.com/yourusername/virallens/backend/modules/user"
-	"github.com/yourusername/virallens/backend/modules/websocket"
+	"github.com/iamsr/virallens/backend/modules/auth"
+	"github.com/iamsr/virallens/backend/modules/chat"
+	"github.com/iamsr/virallens/backend/modules/user"
+	"github.com/iamsr/virallens/backend/modules/websocket"
 )
 
 // ProvideJWTService provides a configured JWT service

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/yourusername/virallens/backend/internal/config"
-	"github.com/yourusername/virallens/backend/internal/wire"
+	"github.com/iamsr/virallens/backend/internal/config"
+	"github.com/iamsr/virallens/backend/internal/wire"
 )
 
 func main() {

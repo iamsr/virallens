@@ -1,4 +1,4 @@
-module github.com/yourusername/virallens/backend
+module github.com/iamsr/virallens/backend
 
 go 1.25.3
 

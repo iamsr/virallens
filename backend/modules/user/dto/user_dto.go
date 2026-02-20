@@ -3,7 +3,7 @@ package dto
 import (
 	"time"
 
-	"github.com/yourusername/virallens/backend/models"
+	"github.com/iamsr/virallens/backend/models"
 )
 
 type UserResponse struct {

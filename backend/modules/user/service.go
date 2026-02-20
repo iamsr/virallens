@@ -2,7 +2,7 @@ package user
 
 import (
 	"github.com/google/uuid"
-	"github.com/yourusername/virallens/backend/models"
+	"github.com/iamsr/virallens/backend/models"
 )
 
 type Service interface {

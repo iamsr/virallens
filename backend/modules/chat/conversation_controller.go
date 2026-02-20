@@ -5,8 +5,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/yourusername/virallens/backend/common/utils"
-	"github.com/yourusername/virallens/backend/modules/chat/dto"
+	"github.com/iamsr/virallens/backend/common/utils"
+	"github.com/iamsr/virallens/backend/modules/chat/dto"
 )
 
 type ConversationController struct {

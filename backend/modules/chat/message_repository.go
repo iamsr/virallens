@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/yourusername/virallens/backend/models"
+	"github.com/iamsr/virallens/backend/models"
 	"gorm.io/gorm"
 )
 

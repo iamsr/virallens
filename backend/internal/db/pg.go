@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/yourusername/virallens/backend/internal/config"
-	"github.com/yourusername/virallens/backend/models"
+	"github.com/iamsr/virallens/backend/internal/config"
+	"github.com/iamsr/virallens/backend/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"

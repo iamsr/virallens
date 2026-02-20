@@ -4,9 +4,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/yourusername/virallens/backend/common/utils"
-	"github.com/yourusername/virallens/backend/modules/auth/dto"
-	userdto "github.com/yourusername/virallens/backend/modules/user/dto"
+	"github.com/iamsr/virallens/backend/common/utils"
+	"github.com/iamsr/virallens/backend/modules/auth/dto"
+	userdto "github.com/iamsr/virallens/backend/modules/user/dto"
 )
 
 type Controller struct {

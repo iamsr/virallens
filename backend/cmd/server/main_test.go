@@ -3,8 +3,8 @@ package main
 import (
 	"testing"
 
-	"github.com/yourusername/virallens/backend/internal/config"
-	"github.com/yourusername/virallens/backend/internal/wire"
+	"github.com/iamsr/virallens/backend/internal/config"
+	"github.com/iamsr/virallens/backend/internal/wire"
 )
 
 // TestWireIntegration verifies that Wire can initialize the application
@@ -37,7 +37,7 @@ func TestWireIntegration(t *testing.T) {
 
 	// Try to initialize the application
 	// This will fail on database connection, which is expected
-	_, err := wire.InitializeApplication(cfg)
+	_, err := wire.InitializeServer(cfg)
 
 	// We expect an error related to database connection
 	// The important thing is that Wire wiring itself works

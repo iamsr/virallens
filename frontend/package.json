@@ -18,10 +18,16 @@
     "@heroui/react": "^2.8.9",
     "@heroui/theme": "^2.4.26",
     "axios": "^1.13.5",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "framer-motion": "^12.34.2",
+    "lucide-react": "^0.575.0",
+    "ogl": "^1.0.11",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-router-dom": "^7.13.0",
+    "tailwind-merge": "^3.4.0",
+    "tailwindcss-animate": "^1.0.7",
     "zustand": "^5.0.11"
   },
   "devDependencies": {
@@ -40,5 +46,8 @@
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
     "vitest": "^4.0.18"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "^4.57.1"
   }
 }

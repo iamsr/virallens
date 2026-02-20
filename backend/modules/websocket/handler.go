@@ -9,8 +9,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
-	"github.com/yourusername/virallens/backend/modules/auth"
-	"github.com/yourusername/virallens/backend/modules/chat"
+	"github.com/iamsr/virallens/backend/modules/auth"
+	"github.com/iamsr/virallens/backend/modules/chat"
 )
 
 var upgrader = websocket.Upgrader{

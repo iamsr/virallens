@@ -4,7 +4,7 @@ outpkg: mocks
 filename: "{{.InterfaceName}}_mock.go"
 all: true
 packages:
-  github.com/yourusername/virallens/backend/internal/domain:
+  github.com/iamsr/virallens/backend/internal/domain:
     interfaces:
       UserRepository:
       ConversationRepository:

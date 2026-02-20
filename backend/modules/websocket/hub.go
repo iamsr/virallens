@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
-	"github.com/yourusername/virallens/backend/models"
+	"github.com/iamsr/virallens/backend/models"
 )
 
 const (
